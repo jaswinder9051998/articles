@@ -9,10 +9,12 @@ import pathlib
 IS_PRODUCTION = os.environ.get('IS_PRODUCTION', 'false').lower() == 'true'
 
 if IS_PRODUCTION:
-    # In production, use paths relative to the backend directory
-    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    # In production, use paths relative to the current working directory
+    BASE_DIR = os.path.abspath(os.path.join(os.getcwd(), '..'))
+    print(f"Base directory: {BASE_DIR}")  # Debug print
     FT_DIRECTORY = os.path.join(BASE_DIR, "data", "ftimes")
     ECONOMIST_DIRECTORY = os.path.join(BASE_DIR, "data", "economist")
+    print(f"FT directory: {FT_DIRECTORY}")  # Debug print
 else:
     # In development, use local paths
     FT_DIRECTORY = os.environ.get("FTIMES_BASE_DIR", r"E:\ftimes")
