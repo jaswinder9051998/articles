@@ -3,10 +3,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
     
-    // Get the API base URL from environment or use default
-    const API_BASE_URL = window.location.hostname === 'localhost' 
-        ? 'http://localhost:8000'
-        : 'https://article-summary.onrender.com'; // This will be your Render.com URL
+    // Get the API base URL from the current window location
+    const API_BASE_URL = window.location.origin;
     
     // Function to read and parse the article_summary.txt file
     async function fetchArticleSummaries() {
