@@ -5,6 +5,8 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: cd backend && python server.py
     envVars:
+      - key: IS_PRODUCTION
+        value: "true"
       - key: FTIMES_BASE_DIR
         value: /data/ftimes
       - key: ECONOMIST_BASE_DIR

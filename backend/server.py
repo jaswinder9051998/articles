@@ -3,11 +3,20 @@ import json
 import os
 from datetime import datetime
 from urllib.parse import parse_qs, urlparse
+import pathlib
 
 # Configuration
-FT_DIRECTORY = os.environ.get("FTIMES_BASE_DIR", r"E:\ftimes")
-ECONOMIST_DIRECTORY = os.environ.get("ECONOMIST_BASE_DIR", r"E:\Economist")
+IS_PRODUCTION = os.environ.get('IS_PRODUCTION', 'false').lower() == 'true'
+
+if IS_PRODUCTION:
+    FT_DIRECTORY = os.environ.get("FTIMES_BASE_DIR", "/data/ftimes")
+    ECONOMIST_DIRECTORY = os.environ.get("ECONOMIST_BASE_DIR", "/data/economist")
+else:
+    FT_DIRECTORY = os.environ.get("FTIMES_BASE_DIR", r"E:\ftimes")
+    ECONOMIST_DIRECTORY = os.environ.get("ECONOMIST_BASE_DIR", r"E:\Economist")
+
 PORT = int(os.environ.get("PORT", 8000))
+FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend')
 
 class ArticleHandler(SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -32,23 +41,53 @@ class ArticleHandler(SimpleHTTPRequestHandler):
         elif parsed_url.path == '/get_article_summary':
             self.handle_article_summary()
         elif parsed_url.path == '/health':
-            # Add health check endpoint
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({"status": "healthy"}).encode())
+            self.handle_health_check()
         else:
             # Serve static files from frontend directory
-            self.path = '/frontend' + self.path
-            super().do_GET()
+            if self.path == '/':
+                self.path = '/index.html'
+            
+            file_path = os.path.join(FRONTEND_DIR, self.path.lstrip('/'))
+            
+            if os.path.exists(file_path) and os.path.isfile(file_path):
+                self.send_response(200)
+                if file_path.endswith('.css'):
+                    self.send_header('Content-Type', 'text/css')
+                elif file_path.endswith('.js'):
+                    self.send_header('Content-Type', 'application/javascript')
+                elif file_path.endswith('.html'):
+                    self.send_header('Content-Type', 'text/html')
+                self.end_headers()
+                
+                with open(file_path, 'rb') as f:
+                    self.wfile.write(f.read())
+            else:
+                self.send_error(404, "File not found")
+
+    def handle_health_check(self):
+        response = {
+            "status": "healthy",
+            "environment": "production" if IS_PRODUCTION else "development",
+            "ft_directory_exists": os.path.exists(FT_DIRECTORY),
+            "economist_directory_exists": os.path.exists(ECONOMIST_DIRECTORY)
+        }
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        self.wfile.write(json.dumps(response).encode())
     
     def get_latest_folder(self, base_dir):
         try:
+            if not os.path.exists(base_dir):
+                print(f"Directory does not exist: {base_dir}")
+                return None
+                
             folders = [f for f in os.listdir(base_dir) 
                       if os.path.isdir(os.path.join(base_dir, f))
                       and f[0].isdigit()]
             
             if not folders:
+                print(f"No dated folders found in: {base_dir}")
                 return None
                 
             latest_folder = sorted(folders)[-1]
