@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: article-summary
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    envVars:
+      - key: FTIMES_BASE_DIR
+        value: /data/ftimes
+      - key: ECONOMIST_BASE_DIR
+        value: /data/economist
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1 
