@@ -6,15 +6,24 @@ from urllib.parse import parse_qs, urlparse
 import pathlib
 
 # Configuration
-IS_PRODUCTION = os.environ.get('IS_PRODUCTION', 'false').lower() == 'true'
+IS_PRODUCTION = True  # Force production mode since we're deploying to render.com
 
 if IS_PRODUCTION:
     # In production, use paths relative to the current working directory
-    BASE_DIR = os.path.abspath(os.path.join(os.getcwd(), '..'))
-    print(f"Base directory: {BASE_DIR}")  # Debug print
+    CURRENT_DIR = os.getcwd()
+    print(f"Current directory: {CURRENT_DIR}")
+    
+    # Go up one level from backend to get to project root
+    BASE_DIR = os.path.abspath(os.path.join(CURRENT_DIR, '..'))
+    print(f"Base directory: {BASE_DIR}")
+    
     FT_DIRECTORY = os.path.join(BASE_DIR, "data", "ftimes")
     ECONOMIST_DIRECTORY = os.path.join(BASE_DIR, "data", "economist")
-    print(f"FT directory: {FT_DIRECTORY}")  # Debug print
+    
+    print(f"FT directory: {FT_DIRECTORY}")
+    print(f"FT directory exists: {os.path.exists(FT_DIRECTORY)}")
+    if os.path.exists(FT_DIRECTORY):
+        print(f"FT directory contents: {os.listdir(FT_DIRECTORY)}")
 else:
     # In development, use local paths
     FT_DIRECTORY = os.environ.get("FTIMES_BASE_DIR", r"E:\ftimes")
