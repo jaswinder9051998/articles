@@ -9,8 +9,8 @@ import pathlib
 IS_PRODUCTION = os.environ.get('IS_PRODUCTION', 'false').lower() == 'true'
 
 if IS_PRODUCTION:
-    # In production, use the repository's data directory
-    BASE_DIR = os.environ.get("BASE_DIR", "/opt/render/project/src")
+    # In production, use paths relative to the backend directory
+    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     FT_DIRECTORY = os.path.join(BASE_DIR, "data", "ftimes")
     ECONOMIST_DIRECTORY = os.path.join(BASE_DIR, "data", "economist")
 else:
@@ -68,16 +68,29 @@ class ArticleHandler(SimpleHTTPRequestHandler):
                 self.send_error(404, "File not found")
 
     def handle_health_check(self):
+        # Get list of files in FT_DIRECTORY if it exists
+        ft_files = []
+        if os.path.exists(FT_DIRECTORY):
+            try:
+                ft_files = os.listdir(FT_DIRECTORY)
+            except Exception as e:
+                ft_files = [f"Error listing directory: {str(e)}"]
+
         response = {
             "status": "healthy",
             "environment": "production" if IS_PRODUCTION else "development",
+            "base_dir": os.path.abspath(os.path.dirname(os.path.dirname(__file__))),
+            "ft_directory": FT_DIRECTORY,
             "ft_directory_exists": os.path.exists(FT_DIRECTORY),
-            "economist_directory_exists": os.path.exists(ECONOMIST_DIRECTORY)
+            "ft_directory_contents": ft_files,
+            "economist_directory": ECONOMIST_DIRECTORY,
+            "economist_directory_exists": os.path.exists(ECONOMIST_DIRECTORY),
+            "current_working_directory": os.getcwd()
         }
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.end_headers()
-        self.wfile.write(json.dumps(response).encode())
+        self.wfile.write(json.dumps(response, indent=2).encode())
     
     def get_latest_folder(self, base_dir):
         try:
