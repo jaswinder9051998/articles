@@ -10,24 +10,12 @@ IS_PRODUCTION = True  # Force production mode since we're deploying to render.co
 
 if IS_PRODUCTION:
     # In production, use paths relative to the current working directory
-    CURRENT_DIR = os.getcwd()
-    print(f"Current directory: {CURRENT_DIR}")
-    
-    # Go up one level from backend to get to project root
-    BASE_DIR = os.path.abspath(os.path.join(CURRENT_DIR, '..'))
+    BASE_DIR = os.path.abspath(os.path.join(os.getcwd(), '..'))
     print(f"Base directory: {BASE_DIR}")
-    
-    FT_DIRECTORY = os.path.join(BASE_DIR, "data", "ftimes")
-    ECONOMIST_DIRECTORY = os.path.join(BASE_DIR, "data", "economist")
-    
-    print(f"FT directory: {FT_DIRECTORY}")
-    print(f"FT directory exists: {os.path.exists(FT_DIRECTORY)}")
-    if os.path.exists(FT_DIRECTORY):
-        print(f"FT directory contents: {os.listdir(FT_DIRECTORY)}")
+    SUMMARY_FILE = os.path.join(BASE_DIR, "data", "article_summary.txt")
 else:
     # In development, use local paths
-    FT_DIRECTORY = os.environ.get("FTIMES_BASE_DIR", r"E:\ftimes")
-    ECONOMIST_DIRECTORY = os.environ.get("ECONOMIST_BASE_DIR", r"E:\Economist")
+    SUMMARY_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "article_summary.txt")
 
 PORT = int(os.environ.get("PORT", 8000))
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend')
@@ -50,9 +38,7 @@ class ArticleHandler(SimpleHTTPRequestHandler):
         parsed_url = urlparse(self.path)
         
         # Handle API endpoints
-        if parsed_url.path == '/get_latest_folder':
-            self.handle_get_latest_folder()
-        elif parsed_url.path == '/get_article_summary':
+        if parsed_url.path == '/get_article_summary':
             self.handle_article_summary()
         elif parsed_url.path == '/health':
             self.handle_health_check()
@@ -79,111 +65,34 @@ class ArticleHandler(SimpleHTTPRequestHandler):
                 self.send_error(404, "File not found")
 
     def handle_health_check(self):
-        # Get list of files in FT_DIRECTORY if it exists
-        ft_files = []
-        if os.path.exists(FT_DIRECTORY):
-            try:
-                ft_files = os.listdir(FT_DIRECTORY)
-            except Exception as e:
-                ft_files = [f"Error listing directory: {str(e)}"]
-
         response = {
             "status": "healthy",
             "environment": "production" if IS_PRODUCTION else "development",
-            "base_dir": os.path.abspath(os.path.dirname(os.path.dirname(__file__))),
-            "ft_directory": FT_DIRECTORY,
-            "ft_directory_exists": os.path.exists(FT_DIRECTORY),
-            "ft_directory_contents": ft_files,
-            "economist_directory": ECONOMIST_DIRECTORY,
-            "economist_directory_exists": os.path.exists(ECONOMIST_DIRECTORY),
-            "current_working_directory": os.getcwd()
+            "summary_file": SUMMARY_FILE,
+            "summary_file_exists": os.path.exists(SUMMARY_FILE)
         }
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.end_headers()
         self.wfile.write(json.dumps(response, indent=2).encode())
     
-    def get_latest_folder(self, base_dir):
-        try:
-            if not os.path.exists(base_dir):
-                print(f"Directory does not exist: {base_dir}")
-                return None
-                
-            folders = [f for f in os.listdir(base_dir) 
-                      if os.path.isdir(os.path.join(base_dir, f))
-                      and f[0].isdigit()]
-            
-            if not folders:
-                print(f"No dated folders found in: {base_dir}")
-                return None
-                
-            latest_folder = sorted(folders)[-1]
-            return os.path.join(base_dir, latest_folder)
-            
-        except Exception as e:
-            print(f"Error finding latest folder in {base_dir}: {e}")
-            return None
-    
-    def handle_get_latest_folder(self):
-        try:
-            latest_ft = self.get_latest_folder(FT_DIRECTORY)
-            latest_economist = self.get_latest_folder(ECONOMIST_DIRECTORY)
-            
-            if not latest_ft and not latest_economist:
-                self.send_error(404, "No dated folders found in either directory")
-                return
-                
-            latest_folders = []
-            if latest_ft:
-                latest_folders.append(latest_ft)
-            if latest_economist:
-                latest_folders.append(latest_economist)
-                
-            latest_folder = sorted(latest_folders)[-1]
-                
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({"folder": latest_folder}).encode())
-            
-        except Exception as e:
-            self.send_error(500, str(e))
-    
     def handle_article_summary(self):
         try:
-            latest_ft = self.get_latest_folder(FT_DIRECTORY)
-            latest_economist = self.get_latest_folder(ECONOMIST_DIRECTORY)
-            
-            if not latest_ft and not latest_economist:
-                self.send_error(404, "No dated folders found in either directory")
+            if not os.path.exists(SUMMARY_FILE):
+                self.send_error(404, "No article summaries found")
                 return
             
-            summaries = []
+            with open(SUMMARY_FILE, 'r', encoding='utf-8') as f:
+                content = f.read()
             
-            # Check FT directory
-            if latest_ft:
-                ft_summary_path = os.path.join(latest_ft, "article_summary.txt")
-                if os.path.exists(ft_summary_path):
-                    with open(ft_summary_path, 'r', encoding='utf-8') as f:
-                        summaries.append(f.read())
-            
-            # Check Economist directory
-            if latest_economist:
-                economist_summary_path = os.path.join(latest_economist, "article_summary.txt")
-                if os.path.exists(economist_summary_path):
-                    with open(economist_summary_path, 'r', encoding='utf-8') as f:
-                        summaries.append(f.read())
-            
-            if not summaries:
-                self.send_error(404, "No article summaries found in either directory")
+            if not content.strip():
+                self.send_error(404, "No article summaries found")
                 return
-            
-            combined_summary = "\n\n" + "="*80 + "\n\n".join(summaries)
             
             self.send_response(200)
             self.send_header('Content-Type', 'text/plain')
             self.end_headers()
-            self.wfile.write(combined_summary.encode('utf-8'))
+            self.wfile.write(content.encode('utf-8'))
             
         except Exception as e:
             self.send_error(500, str(e))
