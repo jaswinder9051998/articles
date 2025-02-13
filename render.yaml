@@ -7,10 +7,8 @@ services:
     envVars:
       - key: IS_PRODUCTION
         value: "true"
-      - key: FTIMES_BASE_DIR
-        value: /data/ftimes
-      - key: ECONOMIST_BASE_DIR
-        value: /data/economist
+      - key: BASE_DIR
+        value: /opt/render/project/src
     disk:
       name: data
       mountPath: /data

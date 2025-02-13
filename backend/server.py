@@ -9,9 +9,12 @@ import pathlib
 IS_PRODUCTION = os.environ.get('IS_PRODUCTION', 'false').lower() == 'true'
 
 if IS_PRODUCTION:
-    FT_DIRECTORY = os.environ.get("FTIMES_BASE_DIR", "/data/ftimes")
-    ECONOMIST_DIRECTORY = os.environ.get("ECONOMIST_BASE_DIR", "/data/economist")
+    # In production, use the repository's data directory
+    BASE_DIR = os.environ.get("BASE_DIR", "/opt/render/project/src")
+    FT_DIRECTORY = os.path.join(BASE_DIR, "data", "ftimes")
+    ECONOMIST_DIRECTORY = os.path.join(BASE_DIR, "data", "economist")
 else:
+    # In development, use local paths
     FT_DIRECTORY = os.environ.get("FTIMES_BASE_DIR", r"E:\ftimes")
     ECONOMIST_DIRECTORY = os.environ.get("ECONOMIST_BASE_DIR", r"E:\Economist")
 

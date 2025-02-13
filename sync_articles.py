@@ -1,61 +1,17 @@
 import os
-import paramiko
-import sys
+import shutil
 from datetime import datetime
-import json
-import argparse
+import sys
 
-def load_config():
-    """Load configuration from config.json"""
+def sync_directory(source_dir, target_dir):
+    """Sync local directory to repository directory"""
     try:
-        with open('sync_config.json', 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {
-            "host": "",
-            "username": "",
-            "private_key_path": "",
-            "remote_path": "/data/ftimes",
-            "local_path": r"E:\ftimes"
-        }
-
-def save_config(config):
-    """Save configuration to config.json"""
-    with open('sync_config.json', 'w') as f:
-        json.dump(config, f, indent=4)
-
-def setup_sftp_connection(config):
-    """Set up SFTP connection using private key authentication"""
-    try:
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        
-        private_key = paramiko.RSAKey.from_private_key_file(config['private_key_path'])
-        
-        ssh.connect(
-            hostname=config['host'],
-            username=config['username'],
-            pkey=private_key
-        )
-        
-        sftp = ssh.open_sftp()
-        return ssh, sftp
-    except Exception as e:
-        print(f"Error connecting to server: {str(e)}")
-        sys.exit(1)
-
-def sync_directory(sftp, local_dir, remote_dir):
-    """Sync local directory to remote directory"""
-    try:
-        # Create remote directory if it doesn't exist
-        try:
-            sftp.mkdir(remote_dir)
-        except IOError:
-            pass  # Directory probably already exists
+        # Create target directory if it doesn't exist
+        os.makedirs(target_dir, exist_ok=True)
 
         # Get list of local folders
-        local_folders = [f for f in os.listdir(local_dir) 
-                        if os.path.isdir(os.path.join(local_dir, f))
+        local_folders = [f for f in os.listdir(source_dir) 
+                        if os.path.isdir(os.path.join(source_dir, f))
                         and f[0].isdigit()]
 
         # Sort folders by date (assuming YYYY-MM-DD format)
@@ -67,21 +23,18 @@ def sync_directory(sftp, local_dir, remote_dir):
         print(f"Found {len(folders_to_sync)} recent folders to sync")
 
         for folder in folders_to_sync:
-            local_folder_path = os.path.join(local_dir, folder)
-            remote_folder_path = f"{remote_dir}/{folder}"
+            source_folder_path = os.path.join(source_dir, folder)
+            target_folder_path = os.path.join(target_dir, folder)
 
-            # Create remote folder
-            try:
-                sftp.mkdir(remote_folder_path)
-            except IOError:
-                pass  # Folder might already exist
+            # Create target folder
+            os.makedirs(target_folder_path, exist_ok=True)
 
             # Sync article_summary.txt
-            local_summary = os.path.join(local_folder_path, "article_summary.txt")
-            if os.path.exists(local_summary):
-                remote_summary = f"{remote_folder_path}/article_summary.txt"
-                print(f"Syncing {local_summary} to {remote_summary}")
-                sftp.put(local_summary, remote_summary)
+            source_summary = os.path.join(source_folder_path, "article_summary.txt")
+            if os.path.exists(source_summary):
+                target_summary = os.path.join(target_folder_path, "article_summary.txt")
+                print(f"Syncing {source_summary} to {target_summary}")
+                shutil.copy2(source_summary, target_summary)
 
         print("Sync completed successfully!")
 
@@ -90,30 +43,22 @@ def sync_directory(sftp, local_dir, remote_dir):
         raise
 
 def main():
-    parser = argparse.ArgumentParser(description='Sync articles to render.com')
-    parser.add_argument('--configure', action='store_true', help='Configure connection settings')
-    args = parser.parse_args()
+    # Source directory (your local E:\ftimes)
+    source_dir = r"E:\ftimes"
+    
+    # Target directory (in the repository)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    target_dir = os.path.join(script_dir, "data", "ftimes")
 
-    config = load_config()
+    print(f"Syncing from {source_dir} to {target_dir}...")
+    sync_directory(source_dir, target_dir)
 
-    if args.configure or not all([config['host'], config['username'], config['private_key_path']]):
-        print("Please configure your connection settings:")
-        config['host'] = input("Enter render.com SFTP hostname: ").strip()
-        config['username'] = input("Enter SFTP username: ").strip()
-        config['private_key_path'] = input("Enter path to private key file: ").strip()
-        save_config(config)
-        print("Configuration saved!")
-        return
-
-    print(f"Connecting to {config['host']}...")
-    ssh, sftp = setup_sftp_connection(config)
-
-    try:
-        print("Starting sync process...")
-        sync_directory(sftp, config['local_path'], config['remote_path'])
-    finally:
-        sftp.close()
-        ssh.close()
+    print("\nNext steps:")
+    print("1. Review the changes in the data/ftimes directory")
+    print("2. Commit and push the changes to GitHub:")
+    print("   git add data/ftimes")
+    print('   git commit -m "Update article summaries"')
+    print("   git push")
 
 if __name__ == "__main__":
     main() 
