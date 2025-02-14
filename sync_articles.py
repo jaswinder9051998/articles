@@ -100,7 +100,7 @@ def main():
             f.write("\n\n".join(all_summaries))
         print("Combined summary file created successfully!")
         
-        # Attempt to commit and push changes
+        #Attempt to commit and push changes
         print("\nCommitting and pushing changes...")
         if git_commit_and_push():
             print("Successfully committed and pushed changes to GitHub!")

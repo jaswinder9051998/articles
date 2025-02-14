@@ -2,14 +2,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cardsContainer = document.getElementById('cardsContainer');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
+    const filterBtns = document.querySelectorAll('.filter-btn');
     
     // Get the API base URL from the current window location
     const API_BASE_URL = window.location.origin;
     
+    let allArticles = []; // Store all articles
+    let filteredArticles = []; // Store filtered articles
+    let currentSource = 'all'; // Track current filter
+    
     // Function to read and parse the article_summary.txt file
     async function fetchArticleSummaries() {
         try {
-            // Get article summaries directly
             const response = await fetch(`${API_BASE_URL}/get_article_summary`, {
                 method: 'GET',
                 headers: {
@@ -33,17 +37,29 @@ document.addEventListener('DOMContentLoaded', async () => {
                     url: '',
                     keyTakeaway: '',
                     mainPoints: [],
-                    quote: ''
+                    quote: '',
+                    source: '' // Add source field
                 };
                 
                 let currentSection = '';
                 let currentContent = '';
                 
+                // Process the content
                 lines.forEach(line => {
                     if (line.includes('ARTICLE TITLE:')) {
                         articleData.title = line.replace('📰 ARTICLE TITLE:', '').trim();
                     } else if (line.includes('Read Full Article:')) {
                         articleData.url = line.replace('🔗 Read Full Article:', '').trim();
+                        // Determine source from URL
+                        if (articleData.url.includes('economist.com')) {
+                            articleData.source = 'The Economist';
+                        } else if (articleData.url.includes('ft.com')) {
+                            articleData.source = 'Financial Times';
+                        }
+                        console.log('Determined source from URL:', {
+                            url: articleData.url,
+                            source: articleData.source
+                        });
                     } else if (line.includes('KEY TAKEAWAY')) {
                         currentSection = 'keyTakeaway';
                     } else if (line.includes('MAIN POINTS')) {
@@ -55,7 +71,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             articleData.keyTakeaway = currentContent.trim();
                         }
                         currentContent = '';
-                    } else if (line.trim() && !line.includes('Summary:')) {
+                    } else if (line.trim() && !line.includes('Summary:') && !line.startsWith('Source:')) {
                         switch (currentSection) {
                             case 'keyTakeaway':
                                 currentContent += ' ' + line.trim();
@@ -79,11 +95,42 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
                 
                 return articleData;
-            }).filter(article => article.title && article.url); // Only return articles with title and URL
+            }).filter(article => article.title && article.url && article.source); // Only return articles with title, URL, and source
         } catch (error) {
             console.error('Error fetching article summaries:', error);
             return [];
         }
+    }
+    
+    // Function to filter articles by source
+    function filterArticles(source) {
+        if (source === 'all') {
+            return allArticles;
+        }
+        
+        // Debug logging
+        console.log('Filtering for source:', source);
+        console.log('Total articles:', allArticles.length);
+        
+        // Get unique sources for debugging
+        const uniqueSources = [...new Set(allArticles.map(a => a.source))];
+        console.log('Available sources:', uniqueSources);
+        
+        return allArticles.filter(article => {
+            const isMatch = article.source === source;
+            
+            // Debug logging for each comparison
+            console.log('Comparing article:', {
+                title: article.title,
+                source: article.source,
+                targetSource: source,
+                isMatch: isMatch,
+                sourceLength: article.source.length,
+                targetLength: source.length
+            });
+            
+            return isMatch;
+        });
     }
     
     // Function to create a card element
@@ -109,6 +156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Create card content
         card.innerHTML = `
             <h3 class="card-title">${article.title}</h3>
+            <div class="source-tag">${article.source}</div>
             <div class="card-content">
                 <div class="key-takeaway">
                     <strong>🎯 Key Takeaway:</strong><br>
@@ -156,12 +204,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         return card;
     }
     
-    // Initialize the slider
-    async function initializeSlider() {
-        const articles = await fetchArticleSummaries();
+    // Initialize the slider with filtered articles
+    async function initializeSlider(articles) {
+        cardsContainer.innerHTML = ''; // Clear existing cards
         
         if (articles.length === 0) {
-            cardsContainer.innerHTML = '<p class="error-message">No articles found. Please check if article_summary.txt exists in the latest folder.</p>';
+            cardsContainer.innerHTML = '<p class="error-message">No articles found for the selected source.</p>';
             return;
         }
         
@@ -178,7 +226,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Function to update card positions
         function updateCardPositions() {
             cards.forEach((card, index) => {
-                // Remove all position attributes
                 card.removeAttribute('data-position');
                 
                 if (index === currentIndex) {
@@ -229,6 +276,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateButtons();
     }
     
-    // Initialize the slider
-    initializeSlider();
-}); 
+    // Add click event listeners to filter buttons
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Update active state
+            filterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Get selected source and update filtered articles
+            currentSource = btn.dataset.source;
+            filteredArticles = filterArticles(currentSource);
+            
+            // Reinitialize slider with filtered articles
+            initializeSlider(filteredArticles);
+        });
+    });
+    
+    // Initialize the page
+    async function initialize() {
+        allArticles = await fetchArticleSummaries();
+        filteredArticles = allArticles; // Start with all articles
+        await initializeSlider(filteredArticles);
+    }
+    
+    // Start the application
+    initialize();
+});
