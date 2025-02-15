@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 currentIndex--;
             }
             
-            // Update positions and buttons
+            // Update positions and buttons without reassigning background colors
             if (cards.length > 0) {
                 updateCardPositions();
                 updateButtons();
@@ -283,6 +283,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         articles.forEach((article, index) => {
             const card = document.createElement('div');
             card.className = 'card';
+            // Assign inline background color based on the original index (fixing color change on removal)
+            card.style.backgroundColor = `var(--card-bg-${(index % 6) + 1})`;
             
             // Add remove button
             const removeBtn = document.createElement('button');
@@ -305,7 +307,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     currentIndex--;
                 }
                 
-                // Update positions and buttons
+                // Update positions and buttons without reassigning background colors
                 if (cards.length > 0) {
                     updateCardPositions();
                     updateButtons();
@@ -324,7 +326,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             // Add click event to open article in new tab
             card.addEventListener('click', (e) => {
-                // Don't open article if clicking show more/less button
+                // Don't open article if clicking show more/less button or remove button
                 if (e.target.classList.contains('show-more-btn') || e.target.classList.contains('remove-btn')) {
                     e.stopPropagation();
                     return;
@@ -382,7 +384,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const remainingPoints = card.querySelector('.remaining-points');
                     const isHidden = remainingPoints.style.display === 'none';
                     remainingPoints.style.display = isHidden ? 'block' : 'none';
-                    showMoreBtn.textContent = isHidden ? 'Show less' : `Show ${remainingPoints.length} more questions`;
+                    showMoreBtn.textContent = isHidden ? 'Show less' : `Show ${remainingPoints.children.length} more questions`;
                 });
             }
             
