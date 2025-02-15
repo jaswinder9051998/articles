@@ -284,7 +284,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const card = document.createElement('div');
             card.className = 'card';
             // Assign inline background color based on the original index (fixing color change on removal)
-            card.style.backgroundColor = `var(--card-bg-${(index % 6) + 1})`;
+            card.style.backgroundColor = `var(--card-bg-${(index % 8) + 1})`;
             
             // Add remove button
             const removeBtn = document.createElement('button');

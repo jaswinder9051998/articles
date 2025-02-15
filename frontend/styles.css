@@ -7,6 +7,8 @@
     --card-bg-4: #E8C1F7;  /* Soft purple */
     --card-bg-5: #F7C1C1;  /* Soft red */
     --card-bg-6: #C1E1F7;  /* Soft sky blue */
+    --card-bg-7: #C1F7F5;  /* Soft turquoise */
+    --card-bg-8: #F7C1F3;  /* Soft pink */
     --text-color: #333;
 }
 
@@ -231,65 +233,85 @@ header h1 {
 }
 
 /* Update card color assignments */
-.card:nth-of-type(6n+1) {
+.card:nth-of-type(8n+1) {
     background-color: var(--card-bg-1);
 }
 
-.card:nth-of-type(6n+2) {
+.card:nth-of-type(8n+2) {
     background-color: var(--card-bg-2);
 }
 
-.card:nth-of-type(6n+3) {
+.card:nth-of-type(8n+3) {
     background-color: var(--card-bg-3);
 }
 
-.card:nth-of-type(6n+4) {
+.card:nth-of-type(8n+4) {
     background-color: var(--card-bg-4);
 }
 
-.card:nth-of-type(6n+5) {
+.card:nth-of-type(8n+5) {
     background-color: var(--card-bg-5);
 }
 
-.card:nth-of-type(6n+6) {
+.card:nth-of-type(8n+6) {
     background-color: var(--card-bg-6);
+}
+
+.card:nth-of-type(8n+7) {
+    background-color: var(--card-bg-7);
+}
+
+.card:nth-of-type(8n+8) {
+    background-color: var(--card-bg-8);
 }
 
 /* Update position-based coloring */
-.card[data-position="current"]:nth-of-type(6n+1),
-.card[data-position="prev"]:nth-of-type(6n+1),
-.card[data-position="next"]:nth-of-type(6n+1) {
+.card[data-position="current"]:nth-of-type(8n+1),
+.card[data-position="prev"]:nth-of-type(8n+1),
+.card[data-position="next"]:nth-of-type(8n+1) {
     background-color: var(--card-bg-1);
 }
 
-.card[data-position="current"]:nth-of-type(6n+2),
-.card[data-position="prev"]:nth-of-type(6n+2),
-.card[data-position="next"]:nth-of-type(6n+2) {
+.card[data-position="current"]:nth-of-type(8n+2),
+.card[data-position="prev"]:nth-of-type(8n+2),
+.card[data-position="next"]:nth-of-type(8n+2) {
     background-color: var(--card-bg-2);
 }
 
-.card[data-position="current"]:nth-of-type(6n+3),
-.card[data-position="prev"]:nth-of-type(6n+3),
-.card[data-position="next"]:nth-of-type(6n+3) {
+.card[data-position="current"]:nth-of-type(8n+3),
+.card[data-position="prev"]:nth-of-type(8n+3),
+.card[data-position="next"]:nth-of-type(8n+3) {
     background-color: var(--card-bg-3);
 }
 
-.card[data-position="current"]:nth-of-type(6n+4),
-.card[data-position="prev"]:nth-of-type(6n+4),
-.card[data-position="next"]:nth-of-type(6n+4) {
+.card[data-position="current"]:nth-of-type(8n+4),
+.card[data-position="prev"]:nth-of-type(8n+4),
+.card[data-position="next"]:nth-of-type(8n+4) {
     background-color: var(--card-bg-4);
 }
 
-.card[data-position="current"]:nth-of-type(6n+5),
-.card[data-position="prev"]:nth-of-type(6n+5),
-.card[data-position="next"]:nth-of-type(6n+5) {
+.card[data-position="current"]:nth-of-type(8n+5),
+.card[data-position="prev"]:nth-of-type(8n+5),
+.card[data-position="next"]:nth-of-type(8n+5) {
     background-color: var(--card-bg-5);
 }
 
-.card[data-position="current"]:nth-of-type(6n+6),
-.card[data-position="prev"]:nth-of-type(6n+6),
-.card[data-position="next"]:nth-of-type(6n+6) {
+.card[data-position="current"]:nth-of-type(8n+6),
+.card[data-position="prev"]:nth-of-type(8n+6),
+.card[data-position="next"]:nth-of-type(8n+6) {
     background-color: var(--card-bg-6);
+}
+
+.card[data-position="current"]:nth-of-type(8n+7),
+.card[data-position="prev"]:nth-of-type(8n+7),
+.card[data-position="next"]:nth-of-type(8n+7) {
+    background-color: var(--card-bg-7);
+}
+
+.card[data-position="current"]:nth-of-type(8n+8),
+.card[data-position="prev"]:nth-of-type(8n+8),
+.card[data-position="next"]:nth-of-type(8n+8) {
+    background-color: var(--card-bg-8);
 }
 
 /* Remove the hover effect */

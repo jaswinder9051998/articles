@@ -1,6 +1,6 @@
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 import sys
 import subprocess
 
@@ -35,8 +35,10 @@ def git_commit_and_push():
     return True
 
 def sync_directory(source_dir, target_base_dir, source_name):
-    """Sync and concatenate summaries from source directory"""
+    """Sync and concatenate summaries from source directory, only including folders not older than 3 days."""
     try:
+        now = datetime.now()
+        
         # Get list of all dated folders
         folders = [f for f in os.listdir(source_dir) 
                   if os.path.isdir(os.path.join(source_dir, f))
@@ -47,8 +49,20 @@ def sync_directory(source_dir, target_base_dir, source_name):
         
         summaries = []
         
-        # Collect all summaries
+        # Collect all summaries from folders not older than 3 days
         for folder in folders:
+            try:
+                # Parse folder name using the expected format
+                folder_date = datetime.strptime(folder, '%Y-%m-%d_%H%M')
+            except Exception as e:
+                print(f"Skipping folder {folder} due to parsing error: {e}")
+                continue
+            
+            # Check if folder is not older than 3 days
+            if now - folder_date > timedelta(days=3):
+                print(f"Skipping folder {folder} as it is older than 3 days.")
+                continue
+            
             source_folder_path = os.path.join(source_dir, folder)
             summary_path = os.path.join(source_folder_path, "article_summary.txt")
             
