@@ -138,6 +138,43 @@ document.addEventListener('DOMContentLoaded', async () => {
         const card = document.createElement('div');
         card.className = 'card';
         
+        // Add remove button
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '×';
+        removeBtn.title = 'Remove article';
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent card click event
+            
+            // Find the index of this card
+            const cardIndex = cards.findIndex(c => c === card);
+            
+            // Remove the card from the DOM and the cards array
+            card.remove();
+            cards.splice(cardIndex, 1);
+            
+            // If we removed the current card, adjust currentIndex
+            if (cardIndex <= currentIndex && currentIndex > 0) {
+                currentIndex--;
+            }
+            
+            // Update positions and buttons
+            if (cards.length > 0) {
+                updateCardPositions();
+                updateButtons();
+            } else {
+                // If no cards left for this source
+                cardsContainer.innerHTML = '<p class="error-message">No more articles available for the selected source.</p>';
+            }
+            
+            // Remove from allArticles array too
+            const articleIndex = allArticles.findIndex(a => a.url === article.url);
+            if (articleIndex !== -1) {
+                allArticles.splice(articleIndex, 1);
+            }
+        });
+        card.appendChild(removeBtn);
+        
         // Add click event to open article in new tab
         card.addEventListener('click', (e) => {
             // Don't open article if clicking show more/less button
@@ -154,7 +191,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const hasMorePoints = remainingPoints.length > 0;
         
         // Create card content
-        card.innerHTML = `
+        const contentHtml = `
             <h3 class="card-title">${article.title}</h3>
             <div class="source-tag">${article.source}</div>
             <div class="card-content">
@@ -189,6 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 ` : ''}
             </div>
         `;
+        card.insertAdjacentHTML('beforeend', contentHtml);
         
         // Add event listener for show more/less button if it exists
         const showMoreBtn = card.querySelector('.show-more-btn');
@@ -216,13 +254,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         let currentIndex = 0;
         const cards = [];
         
-        // Create and append cards
-        articles.forEach((article, index) => {
-            const card = createCard(article);
-            cards.push(card);
-            cardsContainer.appendChild(card);
-        });
-
         // Function to update card positions
         function updateCardPositions() {
             cards.forEach((card, index) => {
@@ -242,14 +273,126 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
-        // Initial card setup
-        updateCardPositions();
-        
-        // Update button states
+        // Function to update button states
         function updateButtons() {
             prevBtn.disabled = currentIndex <= 0;
             nextBtn.disabled = currentIndex >= cards.length - 1;
         }
+        
+        // Create and append cards
+        articles.forEach((article, index) => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            
+            // Add remove button
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.innerHTML = '×';
+            removeBtn.title = 'Remove article';
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent card click event
+                
+                // Find the index of this card
+                const cardIndex = cards.indexOf(card);
+                if (cardIndex === -1) return;
+                
+                // Remove the card from the DOM and the cards array
+                card.remove();
+                cards.splice(cardIndex, 1);
+                
+                // If we removed the current card, adjust currentIndex
+                if (cardIndex <= currentIndex && currentIndex > 0) {
+                    currentIndex--;
+                }
+                
+                // Update positions and buttons
+                if (cards.length > 0) {
+                    updateCardPositions();
+                    updateButtons();
+                } else {
+                    // If no cards left for this source
+                    cardsContainer.innerHTML = '<p class="error-message">No more articles available for the selected source.</p>';
+                }
+                
+                // Remove from allArticles array too
+                const articleIndex = allArticles.findIndex(a => a.url === article.url);
+                if (articleIndex !== -1) {
+                    allArticles.splice(articleIndex, 1);
+                }
+            });
+            card.appendChild(removeBtn);
+            
+            // Add click event to open article in new tab
+            card.addEventListener('click', (e) => {
+                // Don't open article if clicking show more/less button
+                if (e.target.classList.contains('show-more-btn') || e.target.classList.contains('remove-btn')) {
+                    e.stopPropagation();
+                    return;
+                }
+                window.open(article.url, '_blank');
+            });
+            
+            // Limit main points to first 2 questions initially
+            const initialPoints = article.mainPoints.slice(0, 2);
+            const remainingPoints = article.mainPoints.slice(2);
+            const hasMorePoints = remainingPoints.length > 0;
+            
+            // Create card content
+            const contentHtml = `
+                <h3 class="card-title">${article.title}</h3>
+                <div class="source-tag">${article.source}</div>
+                <div class="card-content">
+                    <div class="key-takeaway">
+                        <strong>🎯 Key Takeaway:</strong><br>
+                        ${article.keyTakeaway}
+                    </div>
+                    <div class="qa-section">
+                        ${initialPoints.map(point => `
+                            <div class="qa-pair">
+                                <p class="question">Q: ${point.question}</p>
+                                <p class="answer">A: ${point.answer}</p>
+                            </div>
+                        `).join('')}
+                        ${hasMorePoints ? `
+                            <div class="remaining-points" style="display: none;">
+                                ${remainingPoints.map(point => `
+                                    <div class="qa-pair">
+                                        <p class="question">Q: ${point.question}</p>
+                                        <p class="answer">A: ${point.answer}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button class="show-more-btn">Show ${remainingPoints.length} more questions</button>
+                        ` : ''}
+                    </div>
+                    ${article.quote ? `
+                        <div class="quote">
+                            <strong>💬 Notable Quote:</strong><br>
+                            ${article.quote}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            card.insertAdjacentHTML('beforeend', contentHtml);
+            
+            // Add event listener for show more/less button if it exists
+            const showMoreBtn = card.querySelector('.show-more-btn');
+            if (showMoreBtn) {
+                showMoreBtn.addEventListener('click', () => {
+                    const remainingPoints = card.querySelector('.remaining-points');
+                    const isHidden = remainingPoints.style.display === 'none';
+                    remainingPoints.style.display = isHidden ? 'block' : 'none';
+                    showMoreBtn.textContent = isHidden ? 'Show less' : `Show ${remainingPoints.length} more questions`;
+                });
+            }
+            
+            cards.push(card);
+            cardsContainer.appendChild(card);
+        });
+
+        // Initial setup
+        updateCardPositions();
+        updateButtons();
         
         // Slide functions
         function slideNext() {
@@ -271,9 +414,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Add event listeners to buttons
         nextBtn.addEventListener('click', slideNext);
         prevBtn.addEventListener('click', slidePrev);
-        
-        // Initial button state
-        updateButtons();
     }
     
     // Add click event listeners to filter buttons
